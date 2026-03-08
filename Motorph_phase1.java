@@ -1,4 +1,4 @@
-package src; // Dine-define kung saang folder (package) nakatama ang file na ito
+package src; 
 import java.util.*; // Import para magamit ang Scanner at iba pang utility tools
 import java.io.*; // Import para magamit ang BufferedReader at FileReader para sa CSV
 
@@ -14,14 +14,14 @@ public class Motorph_phase1 {
         // Babasahin ang CSV file at ilalagay ang laman sa mga arrays na ginawa sa taas
         readEmployeeData(empId, birthday, empName, hourlyRate);
         
-        Scanner scan = new Scanner(System.in); // Tool para makapag-type ang user
-        System.out.println("Enter Employee ID: "); // Mensahe para sa user
+        Scanner scan = new Scanner(System.in); // Para sa scanner
+        System.out.println("Enter Employee ID: ");
         String searchId = scan.nextLine(); // Kukunin ang tinype na ID ng user
         
         // Ipapadala ang ID at ang mga arrays sa processPayroll para hanapin at i-compute ang sahod
         processPayroll(searchId, empId, birthday, empName, hourlyRate);
         
-        scan.close(); // Isasara ang scanner para makatipid sa memory
+        scan.close();
     }
 
     // Method para i-compute ang oras ng trabaho base sa Time In at Time Out
@@ -36,7 +36,7 @@ public class Motorph_phase1 {
         int actualIn;
         int actualOut;
         
-        // Check kung pasok sa grace period; kung hindi, late na siya
+        // Check kung pasok sa grace period; kung hindi late 
         if (inMin <= gracePeriod) {
             actualIn = startShift; // Ituturing na 8:00 ang pasok
         } else {
