@@ -137,7 +137,6 @@ public class Motorph_phase1 {
         double grossWeekly = weeklyHours * hourlyRate; // Total sahod bago ang bawas
         
      // Week 8: Net Wage Calculation (Applying deductions)
-        // Dahil monthly ang matrices mo, hahatiin natin sa 4 ang monthly deduction para makuha ang weekly share
         double estimatedMonthly = grossWeekly * 4; 
         double sssWeekly = computeSSS(estimatedMonthly) / 4;
         double phWeekly = computePhilHealth(estimatedMonthly) / 4;
