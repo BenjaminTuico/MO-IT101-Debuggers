@@ -4,7 +4,38 @@ import java.io.*; // Import para magamit ang BufferedReader at FileReader para s
 
 public class Motorph_phase1 {
     
+	public static boolean login() {
+		Scanner scan = new Scanner(System.in);
+		String userName = "employee";
+		String pass = "1234";
+		int attempts = 3;
+		
+		System.out.println("\"----- MotorPH Login System -----\"");
+		
+		while (attempts > 0) {
+			System.out.println("Username: ");
+			String inputUser = scan.next();
+			System.out.println("Password: ");
+			String inputPass = scan.next();
+			
+			if (inputUser.equals(userName) && inputPass.equals(pass)) {
+				System.out.println("Login Successful! Welcome " + userName);
+		        System.out.println("");
+				return true;
+			} else {
+				attempts--;
+				System.out.println("Invalid credentials. Attempts left: " + attempts + "\n");
+				
+			}
+		}
+		System.out.println("Too many failed attempts. Access Denied.");
+	    return false;
+	}
     public static void main(String[] args) {
+//    	Code for Log in
+    	if (!login()) {
+    		System.exit(0);
+    	}
         // Gagawa ng mga "lalagyan" (arrays) para sa 50 na empleyado
         String[] empId = new String[50]; // Lalagyan ng mga ID
         String[] empFullName = new String[50]; // Lalagyan ng mga pangalan
@@ -33,15 +64,23 @@ public class Motorph_phase1 {
                 String id = data[0].replaceAll("\"", "").trim();
                 
                 if (id.equals(searchID)) {
-                	String timeIn = data[4].replaceAll("\"", "").trim(); // Adjust column index if needed
-                    String timeOut = data[5].replaceAll("\"", "").trim();
-                    totalHours += calculateHrs(timeIn, timeOut);
+                	String date = data[3].replaceAll("\"", "").trim();
+                	if (date.contains("/06/2024")) {
+                		String timeIn = data[4].replaceAll("\"", "").trim(); // Adjust column index if needed
+                        String timeOut = data[5].replaceAll("\"", "").trim();
+                        if(!timeIn.equals("0:00") && !timeOut.equals("0:00")) {
+                        	totalHours += calculateHrs(timeIn, timeOut);
+                        }
+                	}
+                	
+
                 	}
 				}
 			} catch (Exception e) {
 				System.out.println("Error reading Attendance: " + e.getMessage());
 			}
-		return totalHours / 4.0;
+//		return totalHours / 4.0;
+		return totalHours;
 	}
 
     // Method para i-compute ang oras ng trabaho base sa Time In at Time Out
@@ -52,17 +91,24 @@ public class Motorph_phase1 {
         int outMin = timeToMinutes(timeOut); // Gagawing "minutes" ang Time Out
         
         int startShift = timeToMinutes("08:00"); // Standard na oras ng pasok
-        int gracePeriod = timeToMinutes("08:10"); // Hanggang 8:10 ay walang late
+        int gracePeriod = timeToMinutes("08:05"); // Hanggang 8:10 ay walang late
         int endShift = timeToMinutes("17:00");
         
         int actualIn = (inMin <= gracePeriod) ? startShift : inMin;
         
-        int actualOut = (outMin > endShift) ? endShift : outMin;
+        if (actualIn < startShift) actualIn = startShift;
+        if (outMin > endShift) outMin = endShift;
+        if (outMin < actualIn) return 0;
+        
+//        int actualOut = (outMin > endShift) ? endShift : outMin;
         
      // Computation (Out - In)
-        int totalMinutesWorked = outMin - actualIn;
+        double totalMinutes = outMin - actualIn - 60;
+        double hours = totalMinutes / 60.0;
         
-        double hours = (actualOut - actualIn - 60) / 60.0;
+//        int totalMinutesWorked = outMin - actualIn;
+        
+//        double hours = (actualOut - actualIn - 60) / 60.0;
         return (hours < 0) ? 0 : hours;
 
 
@@ -77,7 +123,18 @@ public class Motorph_phase1 {
 
     // Method para sa PhilHealth (Sahod * 3% tapos hati ang employer at employee)
     public static double computePhilHealth(double gross) {
-        return(gross * 0.03) * 0.50; // 50% ang share ng employee
+//        return(gross * 0.03) * 0.50; // 50% ang share ng employee
+    	double monthlyGross = gross * 4;
+    	double contribution;
+    	
+    	if (monthlyGross <= 1000) {
+    		contribution = 300.00;
+    	} else if (monthlyGross >= 90000) {
+    		contribution = 900.00;
+    	} else {
+    		contribution = monthlyGross * 0.03;
+    	}
+    	return (contribution * 0.50) / 4;
     }
 
     // Method para sa Pag-IBIG deduction
