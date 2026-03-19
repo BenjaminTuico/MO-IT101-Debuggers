@@ -7,52 +7,65 @@ public class Motorph_phase1 {
     public static void main(String[] args) {
         // Gagawa ng mga "lalagyan" (arrays) para sa 50 na empleyado
         String[] empId = new String[50]; // Lalagyan ng mga ID
-        String[] empName = new String[50]; // Lalagyan ng mga pangalan
+        String[] empFullName = new String[50]; // Lalagyan ng mga pangalan
         double[] hourlyRate = new double [50]; // Lalagyan ng sahod kada oras
         String[] birthday = new String[50]; // Lalagyan ng kaarawan
         
         // Babasahin ang CSV file at ilalagay ang laman sa mga arrays na ginawa sa taas
-        readEmployeeData(empId, birthday, empName, hourlyRate);
+        readEmployeeData(empId, birthday, empFullName, hourlyRate);
         
         Scanner scan = new Scanner(System.in); // Para sa scanner
         System.out.println("Enter Employee ID: ");
         String searchId = scan.nextLine(); // Kukunin ang tinype na ID ng user
         
         // Ipapadala ang ID at ang mga arrays sa processPayroll para hanapin at i-compute ang sahod
-        processPayroll(searchId, empId, birthday, empName, hourlyRate);
+        processPayroll(searchId, empId, birthday, empFullName, hourlyRate);
         
         scan.close();
     }
+    
+    private static double calculateHrsFromCSV(String searchID) {
+		double totalHours = 0;
+		try (BufferedReader br = new BufferedReader(new FileReader("Attendance.csv"))){
+			String line = br.readLine();
+			while ((line = br.readLine()) != null ){
+				String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                String id = data[0].replaceAll("\"", "").trim();
+                
+                if (id.equals(searchID)) {
+                	String timeIn = data[4].replaceAll("\"", "").trim(); // Adjust column index if needed
+                    String timeOut = data[5].replaceAll("\"", "").trim();
+                    totalHours += calculateHrs(timeIn, timeOut);
+                	}
+				}
+			} catch (Exception e) {
+				System.out.println("Error reading Attendance: " + e.getMessage());
+			}
+		return totalHours / 4.0;
+	}
 
     // Method para i-compute ang oras ng trabaho base sa Time In at Time Out
     public static double calculateHrs(String timeIn, String timeOut) {
-        int inMin = timeToMinutes(timeIn); // Gagawing "minutes" ang Time In
+    	if (timeIn.equals("0:00") || timeOut.equals("0:00")) return 0;
+       
+    	int inMin = timeToMinutes(timeIn); // Gagawing "minutes" ang Time In
         int outMin = timeToMinutes(timeOut); // Gagawing "minutes" ang Time Out
         
         int startShift = timeToMinutes("08:00"); // Standard na oras ng pasok
         int gracePeriod = timeToMinutes("08:10"); // Hanggang 8:10 ay walang late
-        int endShift = timeToMinutes("17:00"); // Standard na oras ng uwi
+        int endShift = timeToMinutes("17:00");
         
-        int actualIn;
-        int actualOut;
+        int actualIn = (inMin <= gracePeriod) ? startShift : inMin;
         
-        // Check kung pasok sa grace period; kung hindi late 
-        if (inMin <= gracePeriod) {
-            actualIn = startShift; // Ituturing na 8:00 ang pasok
-        } else {
-            actualIn = inMin; // Kung lampas 8:10, ang actual time ang susundin
-        }
+        int actualOut = (outMin > endShift) ? endShift : outMin;
         
-        // Check kung maagang umuwi o nag-overtime; 17:00 ang limit para sa regular hours
-        if (outMin > endShift) {
-            actualOut = endShift;
-        } else {
-            actualOut = outMin;
-        }
+     // Computation (Out - In)
+        int totalMinutesWorked = outMin - actualIn;
         
-        // Computation: (Minutes Out - Minutes In - 60 mins lunch break) / 60 para maging hours
-        double totalHours = (actualOut - actualIn - 60) / 60.0;
-        return (totalHours < 0) ? 0 : totalHours; // Siguraduhin na hindi negative ang sagot
+        double hours = (actualOut - actualIn - 60) / 60.0;
+        return (hours < 0) ? 0 : hours;
+
+
     }
     
     // Method para sa SSS deduction base sa sahod
@@ -69,9 +82,20 @@ public class Motorph_phase1 {
 
     // Method para sa Pag-IBIG deduction
     public static double computePagIbig(double gross) {
-        double rate = (gross <= 1500) ? 0.01 : 0.02; // 1% kung maliit ang sahod, 2% kung malaki
-        double contribution = gross * rate;
-        return (contribution > 100) ? 100 : contribution; // Max na contribution ay 100
+    	double rate;
+    	
+    	if(gross <= 1500) {
+    		rate = 0.01;
+    	} else {
+    		rate = 0.02;
+    	}
+    	
+    	double contribution = gross * rate;
+    	
+    	if (contribution > 100) {
+    		contribution = 100;
+    	}
+        return contribution;
     }
 
     // Method para sa Withholding Tax base sa taxable income
@@ -89,22 +113,24 @@ public class Motorph_phase1 {
     }
 
     // Method para basahin ang CSV file at ilagay ang data sa arrays
-    public static void readEmployeeData(String[] id, String[] bday, String[] name, double[] rate) {
+    public static void readEmployeeData(String[] id, String[] bday, String[] fullName, double[] rate) {
         try (BufferedReader br = new BufferedReader(new FileReader("EmployeeData.csv"))) {
             String line = br.readLine(); // Nilalagpasan ang unang linya (headers)
             int i = 0;
             while ((line = br.readLine()) != null && i < id.length) {
                 // Hinihiwalay ang data gamit ang comma (regex para iwas error sa quotes)
                 String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                id[i] = data[0].replaceAll("\"", "").trim(); // ID column
-                name[i] = data[1].replaceAll("\"", "").trim(); // Name column
-                bday[i] = data[3].replaceAll("\"", "").trim(); // Birthday column
                 
-                String rateRaw = data[18].replaceAll("\"", "").trim(); // Sahod column
-                if (!rateRaw.isEmpty()) {
-                    rate[i] = Double.parseDouble(rateRaw); // Ginagawang number ang sahod
+                if (data.length > 18) {
+                    id[i] = data[0].replaceAll("\"", "").trim();
+                    fullName[i] = data[2].replace("\"", "").trim() + " " + data[1].replace("\"", "").trim();
+                    bday[i] = data[3].replaceAll("\"", "").trim();
+
+                    // Column S = Index 18
+                    String hourlyRateStr = data[18].replaceAll("\"", "").replaceAll(",", "").trim();
+                    rate[i] = Double.parseDouble(hourlyRateStr);
+                    i++;
                 }
-                i++;
             }
         } catch (Exception e) {
             System.out.println("Error reading CSV: " + e.getMessage()); // Error message kung may problema sa file
@@ -113,51 +139,49 @@ public class Motorph_phase1 {
 
     // Method para hanapin ang empleyado at i-calculate lahat ng deductions
     public static void processPayroll(String id, String[] ids, String[] bdays, String[] names, double[] rates) {
-        double hourlyRate = 0;
-        String name = "";
-        String bday = "";
+    	int index = -1;
 
         // Loop para hanapin kung saang index yung ID na tinype ng user
         for (int i = 0; i < ids.length; i++) {
             if (ids[i] != null && ids[i].equals(id)) {
-                hourlyRate = rates[i];
-                name = names[i];
-                bday = bdays[i];
+            	index = i;
                 break;
             }
         }
         
         // Kung walang nahanap na pangalan, ititigil ang program
-        if (name.isEmpty()) {
+        if (index == -1) {
             System.out.println("Employee not found.");
             return;
         }
         
-        double weeklyHours = 40.0; // Assumption na 40hours ang trabaho
-        double grossWeekly = weeklyHours * hourlyRate; // Total sahod bago ang bawas
+        double totalHours = calculateHrsFromCSV(id);
+        double grossWage = totalHours * rates[index]; // Total sahod bago ang bawas
         
      // Week 8: Net Wage Calculation (Applying deductions)
-        double estimatedMonthly = grossWeekly * 4; 
-        double sssWeekly = computeSSS(estimatedMonthly) / 4;
-        double phWeekly = computePhilHealth(estimatedMonthly) / 4;
-        double piWeekly = computePagIbig(estimatedMonthly) / 4;
+        double estimatedMonthly = grossWage * 4; 
+        double sss = computeSSS(estimatedMonthly) / 4;
+        double ph = computePhilHealth(estimatedMonthly) / 4;
+        double pi = computePagIbig(estimatedMonthly) / 4;
         
         // Tax is based on taxable income
-        double taxableWeekly = grossWeekly - (sssWeekly + phWeekly + piWeekly);
-        double taxWeekly = computeTax(taxableWeekly * 4) / 4;
+        double taxableWeekly = grossWage - (sss+ ph + pi);
+        double tax = computeTax(taxableWeekly * 4) / 4;
 
-        double netWeekly = grossWeekly - (sssWeekly + phWeekly + piWeekly + taxWeekly);
+        double net = grossWage - (sss + ph+ pi + tax);
 
         // Week 5 presentation of results
-        displaySummary(name, bday, grossWeekly, sssWeekly, phWeekly, piWeekly, taxWeekly, netWeekly);
+        displaySummary(names[index], bdays[index],totalHours, grossWage, sss, ph, pi, tax, net);
     }
 
     // Method para i-print ang payroll summary
-    public static void displaySummary(String name, String bday, double gross, double sss, double ph, double pi, double tax, double net) {
+    public static void displaySummary(String name, String bday, double hrs ,double gross, double sss, double ph, double pi, double tax, double net) {
         System.out.println("\n----- MotorPH Weekly Payroll Summary -----"); 
         System.out.println("Employee Name:  " + name);
         System.out.println("Birthday:       " + bday);
+        System.out.printf("Total Hours:    %.2f\n", hrs);
         System.out.printf("Weekly Gross:   %.2f\n", gross); 
+        System.out.println("----------------------------------\n");
         System.out.printf("SSS:            %.2f\n", sss);
         System.out.printf("PhilHealth:     %.2f\n", ph);
         System.out.printf("Pag-IBIG:       %.2f\n", pi);
