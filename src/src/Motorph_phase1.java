@@ -156,9 +156,9 @@ public class Motorph_phase1 {
         scan.nextLine();
     }
 
-    // ==========================================================
+  
     // DATA PROCESSING CODE
-    // ==========================================================
+
 
     // This code reads the EmployeeData.csv file and fills up our arrays
     public static void readEmployeeData() {
@@ -252,9 +252,8 @@ public class Motorph_phase1 {
         return (totalMinutes / 60.0 < 0) ? 0 : totalMinutes / 60.0;
     }
 
-    // ==========================================================
+ 
     // DEDUCTION CALCULATORS
-    // ==========================================================
 
     // This code computes for SSS contribution
     public static double computeSSS(double gross) {
