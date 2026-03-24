@@ -1,294 +1,312 @@
 /*
  * MotorPH Payroll System
  * Group: Debuggers
- * Date: March 23, 2026
- *
- * Description:
- * This program reads employee and attendance data from CSV files,
- * computes payroll based on actual worked hours,
- * and applies government deductions (SSS, PhilHealth, Pag-IBIG, Tax).
- *
- * Features:
- * - Login system
- * - Attendance-based payroll computation
- * - Government deductions
- * - Payroll summary display
+ * * This program:
+ * 1. Reads Employee and Attendance CSV files.
+ * 2. Asks the user to login as Admin or Employee.
+ * 3. Computes weekly salary minus SSS, PhilHealth, Pag-IBIG, and Tax.
  */
 
 package src;
 
-import java.util.*; // Import utilities such as Scanner for user input
-import java.io.*;  // Import classes for reading CSV files (BufferedReader, FileReader)
+import java.util.*; 
+import java.io.*;  
 
 public class Motorph_phase1 {
 
-    // Handles user login authentication with limited attempts
-    public static boolean login() {
+    // This part stores employee details from the CSV file into arrays
+    static String[] empId = new String[50];
+    static String[] empFullName = new String[50];
+    static double[] hourlyRate = new double[50];
+    static String[] birthday = new String[50];
+    
+    // This variable remembers who is currently logged in
+    static String loggedInUser = ""; 
+
+    public static void main(String[] args) {
+        // This code loads the employee data first before anything else
+        readEmployeeData();
+
         Scanner scan = new Scanner(System.in);
-        String userName = "employee";
-        String pass = "1234";
+        boolean systemRunning = true;
+
+        while (systemRunning) {
+            // This code handles the login process
+            String role = login(scan);
+
+            if (role.equals("FAILED")) {
+                System.out.println("Exiting System...\n");
+                break; 
+            }
+
+            // This code keeps the user inside the menu until they logout
+            boolean loggedIn = true;
+            while (loggedIn) {
+                if (role.equals("ADMIN")) {
+                    loggedIn = showAdminMenu(scan);
+                } else if (role.equals("EMPLOYEE")) {
+                    loggedIn = showEmployeeMenu(scan);
+                }
+            }
+        }
+        
+        scan.close();
+        System.out.println("System Shutdown Successful.");
+    }
+
+
+    // LOGIN AND MENU CODE
+
+
+    // This code checks if the username and password are correct
+    public static String login(Scanner scan) {
         int attempts = 3;
+        System.out.println("\n\"----- MotorPH Login System -----\"");
 
-        System.out.println("\"----- MotorPH Login System -----\"");
-
-        // Loop until login is successful or attempts are exhausted
         while (attempts > 0) {
-            System.out.println("Username: ");
-            String inputUser = scan.next();
+            System.out.print("Username: ");
+            String inputUser = scan.nextLine();
 
-            System.out.println("Password: ");
-            String inputPass = scan.next();
+            System.out.print("Password: ");
+            String inputPass = scan.nextLine();
 
-            // Validate credentials
-            if (inputUser.equals(userName) && inputPass.equals(pass)) {
-                System.out.println("Login Successful! Welcome " + userName);
-                System.out.println("");
-                return true;
-            } else {
+            // This code is for Admin login
+            if (inputUser.equals("payroll_staff") && inputPass.equals("12345")) {
+                System.out.println("\nLogin Successful! Welcome, Administrator.");
+                loggedInUser = "admin";
+                return "ADMIN";
+            } 
+            // This code is for Employee login
+            else if (inputUser.equals("employee") && inputPass.equals("12345")) {
+                System.out.println("\nLogin Successful! Welcome, Employee.");
+                loggedInUser = "10001"; 
+                return "EMPLOYEE";
+            } 
+            else {
                 attempts--;
                 System.out.println("Invalid credentials. Attempts left: " + attempts + "\n");
             }
         }
-
-        // If all attempts fail
-        System.out.println("Too many failed attempts. Access Denied.");
-        return false;
+        return "FAILED";
     }
 
-    public static void main(String[] args) {
-
-        // Execute login system
-        if (!login()) {
-            System.exit(0);
-        }
-
-        // Arrays to store up to 50 employee records
-        String[] empId = new String[50];         // Stores employee IDs
-        String[] empFullName = new String[50];   // Stores employee full names
-        double[] hourlyRate = new double[50];    // Stores hourly rates
-        String[] birthday = new String[50];      // Stores employee birthdays
-
-        // Load employee data from CSV file into arrays
-        readEmployeeData(empId, birthday, empFullName, hourlyRate);
-
-        Scanner scan = new Scanner(System.in);
-
-        // Prompt user to enter employee ID
-        System.out.println("Enter Employee ID: ");
-        String searchId = scan.nextLine();
-
-        // Process payroll for the selected employee
-        processPayroll(searchId, empId, birthday, empFullName, hourlyRate);
-
-        scan.close();
-    }
-
-    // Reads attendance CSV file and computes total worked hours for a specific employee
-    private static double calculateHrsFromCSV(String searchID) {
-        double totalHours = 0;
-
-        try (BufferedReader br = new BufferedReader(new FileReader("Attendance.csv"))) {
-
-            String line = br.readLine(); // Skip header row
-
-            // Read each record in the file
-            while ((line = br.readLine()) != null) {
-
-                // Split CSV while handling quoted values
-                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                String id = data[0].replaceAll("\"", "").trim();
-
-                // Match employee ID
-                if (id.equals(searchID)) {
-
-                    String date = data[3].replaceAll("\"", "").trim();
-
-                    // Filter records for June 2024
-                    if (date.contains("/06/2024")) {
-
-                        String timeIn = data[4].replaceAll("\"", "").trim();
-                        String timeOut = data[5].replaceAll("\"", "").trim();
-
-                        // Ignore invalid time entries
-                        if (!timeIn.equals("0:00") && !timeOut.equals("0:00")) {
-                            totalHours += calculateHrs(timeIn, timeOut);
-                        }
+    // This code shows the options for Admin users
+    public static boolean showAdminMenu(Scanner scan) {
+        System.out.println("\n===== MotorPH Admin Menu =====");
+        System.out.println("[1] Compute Payroll for Employee");
+        System.out.println("[2] View Employee List");
+        System.out.println("[3] Logout");
+        System.out.print("Select an option: ");
+        
+        String choice = scan.nextLine();
+        
+        switch (choice) {
+            case "1":
+                System.out.print("\nEnter Employee ID: ");
+                String searchId = scan.nextLine();
+                processPayroll(searchId);
+                pause(scan);
+                break;
+            case "2":
+                // This code prints all employees stored in the array
+                for (int i = 0; i < empId.length; i++) {
+                    if (empId[i] != null) {
+                        System.out.println("ID: " + empId[i] + " | Name: " + empFullName[i]);
                     }
                 }
-            }
+                pause(scan);
+                break;
+            case "3":
+                return false; // This code logs out the user
+            default:
+                System.out.println("Invalid choice.");
+                pause(scan);
+                break;
+        }
+        return true; 
+    }
 
+    // This code shows the options for Employee users
+    public static boolean showEmployeeMenu(Scanner scan) {
+        System.out.println("\n===== MotorPH Employee Menu =====");
+        System.out.println("[1] View My Payroll");
+        System.out.println("[2] Logout");
+        System.out.print("Select an option: ");
+        
+        String choice = scan.nextLine();
+        
+        switch (choice) {
+            case "1":
+                processPayroll(loggedInUser); 
+                pause(scan);
+                break;
+            case "2":
+                return false; 
+            default:
+                System.out.println("Invalid choice.");
+                pause(scan);
+                break;
+        }
+        return true;
+    }
+
+    // This code just waits for the user to press Enter
+    private static void pause(Scanner scan) {
+        System.out.println("\nPress Enter to continue...");
+        scan.nextLine();
+    }
+
+    // ==========================================================
+    // DATA PROCESSING CODE
+    // ==========================================================
+
+    // This code reads the EmployeeData.csv file and fills up our arrays
+    public static void readEmployeeData() {
+        try (BufferedReader br = new BufferedReader(new FileReader("EmployeeData.csv"))) {
+            String line = br.readLine(); 
+            int i = 0;
+
+            while ((line = br.readLine()) != null && i < empId.length) {
+                // This code splits the CSV line into parts
+                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                if (data.length > 18) {
+                    empId[i] = data[0].replaceAll("\"", "").trim();
+                    empFullName[i] = data[2].replace("\"", "").trim() + " " + data[1].replace("\"", "").trim();
+                    birthday[i] = data[3].replaceAll("\"", "").trim();
+
+                    // This code converts the hourly rate string into a number
+                    String hourlyRateStr = data[18].replaceAll("\"", "").replaceAll(",", "").trim();
+                    hourlyRate[i] = Double.parseDouble(hourlyRateStr);
+                    i++;
+                }
+            }
         } catch (Exception e) {
-            System.out.println("Error reading Attendance: " + e.getMessage());
+            System.out.println("Error reading file.");
+        }
+    }
+
+    // This code is the main process to compute for sweldo and deductions
+    public static void processPayroll(String id) {
+        int index = -1;
+
+        // This code looks for the employee index using the ID
+        for (int i = 0; i < empId.length; i++) {
+            if (empId[i] != null && empId[i].equals(id)) {
+                index = i;
+                break;
+            }
         }
 
+        if (index == -1) {
+            System.out.println("Employee not found.");
+            return;
+        }
+
+        // This code gets the total hours from the attendance file
+        double totalHours = calculateHrsFromCSV(id);
+        double grossWage = totalHours * hourlyRate[index];
+
+        // This code computes for government deductions
+        double estimatedMonthly = grossWage * 4;
+        double sss = computeSSS(estimatedMonthly) / 4;
+        double ph = computePhilHealth(estimatedMonthly) / 4;
+        double pi = computePagIbig(estimatedMonthly) / 4;
+
+        // This code computes for the withholding tax
+        double taxableWeekly = grossWage - (sss + ph + pi);
+        double tax = computeTax(taxableWeekly * 4) / 4;
+
+        double net = grossWage - (sss + ph + pi + tax);
+
+        displaySummary(empFullName[index], birthday[index], totalHours, grossWage, sss, ph, pi, tax, net);
+    }
+
+    // This code reads the Attendance.csv to count how many hours the employee worked
+    private static double calculateHrsFromCSV(String searchID) {
+        double totalHours = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader("Attendance.csv"))) {
+            String line = br.readLine(); 
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                if (data[0].replaceAll("\"", "").trim().equals(searchID)) {
+                    totalHours += calculateHrs(data[4].replaceAll("\"", ""), data[5].replaceAll("\"", ""));
+                }
+            }
+        } catch (Exception e) { }
         return totalHours;
     }
 
-    // Computes working hours based on time-in and time-out rules
+    // This code computes hours worked and deducts 1 hour for lunch
     public static double calculateHrs(String timeIn, String timeOut) {
-
-        // Ignore invalid entries
         if (timeIn.equals("0:00") || timeOut.equals("0:00")) return 0;
 
         int inMin = timeToMinutes(timeIn);
         int outMin = timeToMinutes(timeOut);
 
-        int startShift = timeToMinutes("08:00");   // Standard start time
-        int gracePeriod = timeToMinutes("08:05");  // Grace period for late arrivals
-        int endShift = timeToMinutes("17:00");     // Standard end time
+        // This code applies the 10-minute grace period
+        int actualIn = (inMin <= timeToMinutes("08:10")) ? timeToMinutes("08:00") : inMin;
 
-        // Apply grace period rule
-        int actualIn = (inMin <= gracePeriod) ? startShift : inMin;
-
-        // Enforce shift boundaries
-        if (actualIn < startShift) actualIn = startShift;
-        if (outMin > endShift) outMin = endShift;
-        if (outMin < actualIn) return 0;
-
-        // Compute total worked minutes minus 1-hour lunch break
+        // This code computes the result and subtracts 60 minutes for lunch
         double totalMinutes = outMin - actualIn - 60;
-        double hours = totalMinutes / 60.0;
-
-        return (hours < 0) ? 0 : hours;
+        return (totalMinutes / 60.0 < 0) ? 0 : totalMinutes / 60.0;
     }
 
-    // Computes SSS contribution based on salary brackets
+    // ==========================================================
+    // DEDUCTION CALCULATORS
+    // ==========================================================
+
+    // This code computes for SSS contribution
     public static double computeSSS(double gross) {
         if (gross <= 3250) return 135.00;
         if (gross >= 24750) return 1125.00;
         return gross * 0.045;
     }
 
-    // Computes PhilHealth contribution based on monthly salary estimate
+    // This code computes for PhilHealth (half share)
     public static double computePhilHealth(double gross) {
         double monthlyGross = gross * 4;
-        double contribution;
-
-        if (monthlyGross <= 1000) {
-            contribution = 300.00;
-        } else if (monthlyGross >= 90000) {
-            contribution = 900.00;
-        } else {
-            contribution = monthlyGross * 0.03;
-        }
-
-        return (contribution * 0.50) / 4;
+        return (monthlyGross * 0.03 * 0.50) / 4;
     }
 
-    // Computes Pag-IBIG contribution with a capped value
+    // This code computes for Pag-IBIG (max 100)
     public static double computePagIbig(double gross) {
-        double rate = (gross <= 1500) ? 0.01 : 0.02;
-
-        double contribution = gross * rate;
-
-        if (contribution > 100) {
-            contribution = 100;
-        }
-
-        return contribution;
+        double contribution = gross * 0.02;
+        return (contribution > 100) ? 100 : contribution;
     }
 
-    // Computes withholding tax based on taxable income
+    // This code computes for the BIR Tax
     public static double computeTax(double taxable) {
         if (taxable <= 20833) return 0;
-        if (taxable <= 33332) return (taxable - 20833) * 0.20;
-        if (taxable <= 66666) return 2500 + (taxable - 33333) * 0.25;
-        return (taxable - 66667) * 0.30 + 10833;
+        return (taxable - 20833) * 0.20;
     }
 
-    // Converts time in HH:mm format into total minutes
+    // This code converts "08:30" into 510 minutes
     public static int timeToMinutes(String time) {
         String[] parts = time.split(":");
         return Integer.parseInt(parts[0]) * 60 + Integer.parseInt(parts[1]);
     }
 
-    // Reads employee data from CSV file and stores it into arrays
-    public static void readEmployeeData(String[] id, String[] bday, String[] fullName, double[] rate) {
-        try (BufferedReader br = new BufferedReader(new FileReader("EmployeeData.csv"))) {
-
-            String line = br.readLine(); // Skip header row
-            int i = 0;
-
-            while ((line = br.readLine()) != null && i < id.length) {
-
-                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-
-                if (data.length > 18) {
-                    id[i] = data[0].replaceAll("\"", "").trim();
-                    fullName[i] = data[2].replace("\"", "").trim() + " " +
-                                  data[1].replace("\"", "").trim();
-                    bday[i] = data[3].replaceAll("\"", "").trim();
-
-                    String hourlyRateStr = data[18]
-                            .replaceAll("\"", "")
-                            .replaceAll(",", "")
-                            .trim();
-
-                    rate[i] = Double.parseDouble(hourlyRateStr);
-                    i++;
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("Error reading CSV: " + e.getMessage());
-        }
-    }
-
-    // Finds employee and computes payroll including deductions
-    public static void processPayroll(String id, String[] ids, String[] bdays, String[] names, double[] rates) {
-
-        int index = -1;
-
-        // Search for employee ID in the array
-        for (int i = 0; i < ids.length; i++) {
-            if (ids[i] != null && ids[i].equals(id)) {
-                index = i;
-                break;
-            }
-        }
-
-        // If employee is not found
-        if (index == -1) {
-            System.out.println("Employee not found.");
-            return;
-        }
-
-        // Compute total hours and gross wage
-        double totalHours = calculateHrsFromCSV(id);
-        double grossWage = totalHours * rates[index];
-
-        // Estimate deductions (currently based on weekly-to-monthly conversion)
-        double estimatedMonthly = grossWage * 4;
-
-        double sss = computeSSS(estimatedMonthly) / 4;
-        double ph = computePhilHealth(estimatedMonthly) / 4;
-        double pi = computePagIbig(estimatedMonthly) / 4;
-
-        double taxableWeekly = grossWage - (sss + ph + pi);
-        double tax = computeTax(taxableWeekly * 4) / 4;
-
-        double net = grossWage - (sss + ph + pi + tax);
-
-        // Display payroll summary
-        displaySummary(names[index], bdays[index], totalHours, grossWage, sss, ph, pi, tax, net);
-    }
-
-    // Displays formatted payroll summary
+    // This code prints the final payroll result on the screen
     public static void displaySummary(String name, String bday, double hrs, double gross,
                                       double sss, double ph, double pi, double tax, double net) {
+    	System.out.println("\n--- MotorPH Payroll Summary ---");
+        System.out.println("Name: " + name);
+        System.out.println("Birthday: " + bday);
+        System.out.printf("Total Hours: %.2f\n", hrs);
+        System.out.printf("Gross Pay: %.2f\n", gross);
 
-        System.out.println("\n----- MotorPH Weekly Payroll Summary -----");
-        System.out.println("Employee Name:  " + name);
-        System.out.println("Birthday:       " + bday);
-        System.out.printf("Total Hours:    %.2f\n", hrs);
-        System.out.printf("Weekly Gross:   %.2f\n", gross);
-        System.out.println("----------------------------------\n");
+        System.out.println("\n--- Deductions ---");
+        System.out.printf("SSS: PHP %.2f\n", sss);
+        System.out.printf("PhilHealth: %.2f\n", ph);
+        System.out.printf("Pag-IBIG: %.2f\n", pi);
+        System.out.printf("Tax: %.2f\n", tax);
 
-        System.out.printf("SSS:            %.2f\n", sss);
-        System.out.printf("PhilHealth:     %.2f\n", ph);
-        System.out.printf("Pag-IBIG:       %.2f\n", pi);
-        System.out.printf("Tax:            %.2f\n", tax);
-        System.out.printf("WEEKLY NET PAY: %.2f\n", net);
-        System.out.println("----------------------------------\n");
+        double totalDeductions = sss + ph + pi + tax;
+
+        System.out.println("");
+        System.out.printf("Total Deductions: %.2f\n", totalDeductions);
+        System.out.printf("Net Pay: %.2f\n", net);
+  
     }
 }
