@@ -10,39 +10,84 @@ Benjamin Tuico
 Project Plan Guide Link : https://docs.google.com/spreadsheets/d/1qg2unXqCtltvTnk62PPeBxhtOdik9WtUWdMdQPLZO_0/edit?usp=sharing
 
 
-Program Description: MotorPH Payroll System (Phase 1)
-The MotorPH Phase 1 system is a Java-based console application designed to automate the calculation of weekly employee wages and government-mandated deductions. It transitions from manual record-keeping to a digital process by following these core steps:
+OVERVIEW
+The MotorPH Payroll System is a Java-based console application that automates employee payroll processing. It reads employee and attendance data from CSV files, allows login as Admin or Employee, and computes weekly salary including government deductions.
 
-1. Data Initialization & File Reading
+FEATURES
 
-Upon execution, the system initializes arrays to store information for up to 50 employees. It uses the readEmployeeData method to parse an external CSV file (EmployeeData.csv), extracting critical fields such as Employee ID, Name, Birthday, and Hourly Rate.
+Login System
 
-2. Employee Search & Identification
+Supports Admin and Employee roles
+Maximum of 3 login attempts
+Default credentials:
+Admin : payroll_staff / 12345
+Employee : employee / 12345
 
-The system prompts the user to input a specific Employee ID. It then performs a linear search through the stored arrays to locate the corresponding employee's profile. If the ID is not found, the system provides an error message and terminates the process.
+Admin Functions
 
-3. Wage & Hours Logic
+Compute payroll for any employee using Employee ID
+View employee list
+Logout
 
-While the current version uses a standard 40-hour workweek assumption for payroll processing, the system includes logic (calculateHrs) to determine actual work duration. It accounts for:
+Employee Functions
 
-Grace Periods: Deducting lates if the "Time In" is past 08:10 AM.
+View own payroll
+Logout
 
-Lunch Breaks: Automatically subtracting 60 minutes from the total duration.
+DATA SOURCES
 
-Shift Limits: Capping regular hours at 05:00 PM.
+EmployeeData.csv
 
-4. Automated Deduction & Tax Calculation
+Employee ID
+Full Name
+Birthday
+Hourly Rate
 
-The system calculates the Net Pay by applying Philippine-standard contribution formulas:
+Attendance.csv
 
-SSS: Based on a tiered gross income matrix.
+Employee ID
+Time In
+Time Out
 
-PhilHealth: Calculated at 3% of gross, split 50/50 between employer and employee.
+PAYROLL COMPUTATION
 
-Pag-IBIG: Tiered percentage (1% or 2%) capped at a maximum of 100 pesos.
+Salary Calculation
 
-Withholding Tax: Applied using a progressive tax bracket after deducting mandatory contributions.
+Total hours are computed from attendance records
+Includes a 10-minute grace period (8:00–8:10 AM)
+Deducts 1 hour for lunch
 
-5. Summary Presentation
+Government Deductions
 
-Finally, the displaySummary method generates a formatted Weekly Payroll Summary. This provides a clear breakdown of the Gross Pay, individual deductions (SSS, PhilHealth, Pag-IBIG, Tax), and the final Weekly Net Pay for the user.
+SSS
+
+Based on salary bracket
+Minimum: 135.00
+Maximum: 1125.00
+Otherwise: 4.5% of salary
+
+PhilHealth
+
+3% of monthly salary
+Employee pays 50% share
+
+Pag-IBIG
+
+2% of salary
+Maximum contribution: 100
+
+Tax
+
+No tax if ≤ 20,833
+20% of excess over 20,833
+
+Net Pay Formula
+Net Pay = Gross Pay - (SSS + PhilHealth + Pag-IBIG + Tax)
+
+KEY FUNCTIONALITIES
+
+Reads CSV files using BufferedReader
+Stores employee data in arrays (max 50 employees)
+Computes total working hours from attendance logs
+Converts time (HH:mm) into minutes
+Displays payroll summary with deductions and net pay
