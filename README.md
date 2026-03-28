@@ -1,4 +1,4 @@
-**MO-IT101 – Debuggers**
+<img width="279" height="108" alt="image" src="https://github.com/user-attachments/assets/780c86ec-7a38-4725-a02f-4f7133ea22ea" />**MO-IT101 – Debuggers**
 **MotorPH Payroll System**
 
 **Members**
@@ -92,13 +92,8 @@ CSV files:
 
 Make sure your folder structure looks like this:
 
-ProjectFolder/
-│
-├── src/
-│   └── Motorph_phase1.java
-│
-├── EmployeeData.csv
-├── Attendance.csv
+<img width="279" height="108" alt="image" src="https://github.com/user-attachments/assets/bda4151e-1b3e-43a0-a914-480d591d3736" />
+
 
 3. Compile the Program
 Open your terminal and navigate to the project folder, then run:
