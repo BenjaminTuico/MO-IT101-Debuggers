@@ -1,4 +1,4 @@
-<img width="279" height="108" alt="image" src="https://github.com/user-attachments/assets/780c86ec-7a38-4725-a02f-4f7133ea22ea" />**MO-IT101 – Debuggers**
+**MO-IT101 – Debuggers**
 **MotorPH Payroll System**
 
 **Members**
